@@ -1,0 +1,75 @@
+
+name: Crear GO Arequipa Noticias EXE
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-exe:
+    runs-on: windows-latest
+
+    steps:
+      - name: Obtener proyecto
+        uses: actions/checkout@v4
+
+      - name: Preparar Python para compilacion
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependencias de compilacion
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install "pyinstaller>=6.11,<7"
+
+      - name: Comprobar guardado y generacion de imagenes
+        shell: pwsh
+        run: python -m unittest discover -s tests -v
+
+      - name: Crear un EXE autonomo para Windows
+        shell: pwsh
+        run: |
+          pyinstaller --noconfirm --clean --onefile --console --name GO_Arequipa_Noticias --add-data "templates;templates" --add-data "static;static" --add-data "config.json;." --collect-all tzdata portable_launcher.py
+          if (-not (Test-Path "dist/GO_Arequipa_Noticias.exe")) {
+            throw 'El archivo EXE no fue generado'
+          }
+
+      - name: Prueba basica de arranque Windows
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "$PWD/dist/GO_Arequipa_Noticias.exe" -PassThru -WorkingDirectory "$PWD/dist"
+          try {
+            $ok = $false
+            for ($i=0; $i -lt 90; $i++) {
+              Start-Sleep -Seconds 1
+              if ($p.HasExited) {
+                throw "El EXE termino antes de iniciar el panel"
+              }
+              try {
+                $res = Invoke-WebRequest -Uri 'http://127.0.0.1:5050/login' -TimeoutSec 2 -UseBasicParsing
+                if ($res.StatusCode -eq 200) {
+                  $ok = $true
+                  break
+                }
+              } catch { }
+            }
+            if (-not $ok) {
+              throw 'El servidor no respondio durante la prueba'
+            }
+          } finally {
+            if (-not $p.HasExited) {
+              Stop-Process -Id $p.Id -Force
+            }
+          }
+
+      - name: Descargar ejecutable empaquetado
+        uses: actions/upload-artifact@v4
+        with:
+          name: GO_Arequipa_Noticias_Portable_Windows
+          path: dist/GO_Arequipa_Noticias.exe
+          if-no-files-found: error
