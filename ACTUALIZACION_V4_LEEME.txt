@@ -1,0 +1,41 @@
+GO AREQUIPA NOTICIAS — ACTUALIZACIÓN V4.0
+
+POR QUÉ TODAS LAS NOTICIAS TENÍAN "INFORMACIÓN EN DESARROLLO":
+La versión anterior usaba ese mismo valor para cada noticia cuando no
+existía una clave OpenAI API configurada.
+
+CAMBIOS:
+1. Cintillos automáticos específicos de cada tema (seguridad, obras, salud,
+   meteorología, educación, justicia, etc.).
+2. Los nuevos borradores ya no usan "INFORMACIÓN EN DESARROLLO".
+3. Al arrancar, se actualizan los cintillos genéricos de noticias pendientes y
+   revisadas que ya existían en tu base. NO se alteran noticias aprobadas,
+   publicadas ni cintillos que tú hayas editado.
+4. Se puede pulsar "Generar nuevos textos para esta noticia" para solicitar
+   un nuevo cintillo, titular, bajada y copy. ESTA OPCIÓN SÍ REEMPLAZA TEXTOS,
+   pide confirmación y vuelve a poner la noticia en Pendiente para revisión.
+5. Nuevo botón "Copiar copy para publicar".
+6. Se conservan correcciones de la V3.1 relativas a fotos y exportación JPG.
+7. Versión visible en el pie del panel: "4.0 - Cintillos dinámicos y redacción editorial".
+
+IMPORTANTE SOBRE LA REDACCIÓN COMPLETA:
+La aplicación NO trae una suscripción ni clave de OpenAI API incluida.
+Sin OPENAI_API_KEY, el programa genera un BORRADOR BREVE usando el título y
+resumen de la fuente, con cintillo por tema. No inventará párrafos para llenar
+un copy de 90-160 palabras. Con API configurada, usa el texto de la fuente
+para preparar un copy más elaborado (siempre requiere revisión editorial).
+Un aviso de RSS no es prueba de corroboración independiente.
+
+ACTUALIZAR EL EXE:
+1. Cierra la aplicación. Haz respaldo de GO_Arequipa_Datos.
+2. Descomprime el ZIP y sube su CONTENIDO a la raíz de GitHub
+   GO-Arequipa-Noticias (no agregues una carpeta extra).
+3. Verifica que .github/workflows/compilar-windows.yml esté en la raíz.
+4. En GitHub Actions ejecuta "Crear GO Arequipa Noticias EXE".
+5. Si la compilación y sus pruebas pasan, descarga el ejecutable de Artifacts.
+6. Reemplaza SOLO el archivo .exe, conservando GO_Arequipa_Datos.
+7. Comprueba el número de versión 4.0 al pie del panel.
+
+DERECHOS DE IMAGEN:
+La revisión de licencia y la aprobación humana continúan siendo necesarias.
+No hay publicación automática en redes, ni conexión automática con Canva.

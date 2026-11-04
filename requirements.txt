@@ -1,0 +1,8 @@
+Flask>=3.0,<4.0
+requests>=2.31,<3
+feedparser>=6.0,<7
+beautifulsoup4>=4.12,<5
+Pillow>=10.0,<13
+APScheduler>=3.10,<4
+python-dotenv>=1.0,<2
+tzdata>=2025.1,<2027

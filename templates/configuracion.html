@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% block title %}Configurar Gemini | GO Arequipa Noticias{% endblock %}
+{% block body %}
+<section class="panel" style="max-width:750px;margin:25px auto;padding:25px">
+  <h1>Conectar Gemini</h1>
+  <p>Configura Gemini para redactar el cintillo, titular, bajada y copy con cinco hashtags.
+     La búsqueda de noticias seguirá usando fuentes RSS, sin consumir tokens de IA.</p>
+  <p><strong>Estado:</strong> {% if gemini_configured %}Clave configurada en esta PC{% else %}Sin clave de Gemini{% endif %}</p>
+  <form method="post" action="{{url_for('configuracion')}}">
+    <input type="hidden" name="csrf" value="{{csrf_token}}">
+    <label>Clave API de Gemini (no la compartas con nadie)</label>
+    <input type="password" name="gemini_key" autocomplete="new-password" placeholder="{% if gemini_configured %}Clave guardada; deja en blanco para conservarla{% else %}Pega aquí tu clave de Google AI Studio{% endif %}">
+    <small>La clave se guarda únicamente en GO_Arequipa_Datos/.env de esta computadora, no en GitHub ni en el ejecutable.</small>
+    <label>Modelo de Gemini</label>
+    <input name="gemini_model" value="{{gemini_model}}" required>
+    <p class="muted small">Modelo sugerido: gemini-2.5-flash-lite (puede tener cuota gratuita, según la disponibilidad de tu cuenta). Si el proveedor cambia sus modelos, el nombre puede actualizarse aquí.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+       <button type="submit" name="action" value="guardar">Guardar configuración</button>
+       <button type="submit" name="action" value="probar" class="secondary">Guardar y probar conexión</button>
+       {% if gemini_configured %}<button type="submit" name="action" value="borrar" class="secondary" onclick="return confirm('¿Retirar la clave Gemini guardada en esta computadora?')">Quitar clave</button>{% endif %}
+    </div>
+  </form>
+  <hr><p><strong>Después:</strong> vuelve al panel, entra a una noticia pendiente y pulsa «Generar nuevos textos para esta noticia». No se publica nada automáticamente.</p>
+  <p class="muted small">La clave debe ser privada. Si la expusiste en una captura, conviene revocarla y crear otra. Esta configuración no reenvía tu clave a ChatGPT.</p>
+</section>
+{% endblock %}

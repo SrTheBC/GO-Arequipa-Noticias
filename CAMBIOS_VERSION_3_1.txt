@@ -1,0 +1,19 @@
+GO AREQUIPA NOTICIAS | VERSIÓN 3.1
+- Identificador de versión visible en el pie del panel, para comprobar que se
+  está ejecutando el EXE nuevo y no el anterior.
+- El generador comprueba que la imagen principal esté guardada como archivo.
+- Si no está guardada, informa el paso que falta sin mostrar Errno 2.
+- La ficha diferencia los enlaces de referencia de las fotos ya cargadas.
+- El botón permite comprobar los requisitos antes de generar el JPG.
+- Se añade prueba integrada: falta de foto, subida, derechos y exportación.
+- No modifica la estructura de SQLite ni las claves de acceso guardadas.
+- No se realiza publicación automática en redes ni integración con Canva.
+
+ESTADO DE PRUEBAS EN ESTE ENTORNO:
+- Python: sintaxis validada.
+- Jinja: plantillas analizadas con éxito.
+- Pillow: prueba de JPG modelo_1/modelo_2, ambos 1080×1350, superada.
+- Error de ruta vacía: validación comprobada.
+- Las pruebas HTTP completas no pudieron ejecutarse aquí porque no estaban
+  disponibles Flask/feedparser. Se ejecutarán automáticamente en la acción de
+  GitHub antes de compilar; un resultado verde confirmará la prueba en Windows.

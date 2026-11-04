@@ -1,0 +1,66 @@
+GO AREQUIPA NOTICIAS - EDICION EJECUTABLE PORTABLE PARA WINDOWS
+
+OBJETIVO: un unico archivo GO_Arequipa_Noticias.exe que se abre con doble clic
+sin instalar Python, pip, Docker, n8n ni ChatGPT.
+
+IMPORTANTE: este ZIP contiene el PROYECTO Y SU COMPILADOR EN LA NUBE, NO EL .EXE
+YA COMPILADO. La compilacion de Windows requiere Windows; el entorno en que
+se preparo este archivo no tiene Windows. No afirmamos haber compilado el .exe.
+
+COMO OBTENER EL EXE SIN INSTALAR PROGRAMAS EN TU PC:
+
+1) Crea un repositorio PRIVADO en https://github.com/new
+   (es gratis comenzar; los limites de Actions dependen de la cuenta).
+2) Extrae este ZIP en tu PC.
+3) Sube los archivos y las carpetas del proyecto a la raiz del repositorio.
+   IMPORTANTE: comprueba que se subio .github/workflows/compilar-windows.yml
+   Si no aparece, crea ese archivo en GitHub con el mismo contenido.
+4) Abre la pestana Actions en tu repositorio.
+5) En el menu de la izquierda abre "Crear GO Arequipa Noticias EXE".
+6) Pulsa "Run workflow", elige la rama principal y ejecuta.
+7) Al finalizar satisfactoriamente, abre esa ejecucion y descarga el archivo
+   GO_Arequipa_Noticias_Portable_Windows en la seccion Artifacts.
+8) Extrae el archivo descargado y abre GO_Arequipa_Noticias.exe con doble clic.
+
+USO DEL PROGRAMA:
+- Windows 10 u 11 de 64 bits y conexion a Internet para buscar noticias.
+- Se abrira una ventana de consola y tu navegador mostrara el panel local.
+- La primera vez se crea GO_Arequipa_Datos\ACCESO_INICIAL.txt con la clave.
+- Conserva GO_Arequipa_Datos (contiene tus noticias, imagenes y configuracion).
+- El EXE busca noticias al iniciar y cada 60 minutos MIENTRAS ESTE ABIERTO.
+- Si apagas la PC, no sigue buscando. Para monitoreo 24/7 debe ejecutarse en
+  una computadora encendida permanentemente o en un servidor externo.
+- Sin OPENAI_API_KEY, los textos son borradores basicos, no copys periodisticos
+  definitivos. La API, si se utiliza, tiene cargos aparte.
+- Las fotografias sugeridas NO son libres de derechos por defecto. Confirma
+  permiso y autoria y sube fotos autorizadas antes de generar una pieza.
+- Canva Gratis NO se conecta ni rellena sus disenos automaticamente. El EXE
+  puede producir un JPG de estilo parecido y textos para pegar a Canva.
+- No publica noticias automaticamente: requiere aprobacion de un editor.
+- No proporciona un detector infalible ni cobertura completa de fuentes.
+
+NO COMPARTAS el archivo .env ni la carpeta GO_Arequipa_Datos.
+
+Informacion tecnica adicional: README.md
+
+ACTUALIZACION: CORRECCION DE GUARDADO Y RUTAS (NOV 2026)
+- Al editar Cintillo, Titulo, Bajada, Copy, Estado o Creditos, el panel guarda
+  automaticamente despues de una breve pausa y muestra "Cambios guardados correctamente".
+- "Guardar revision ahora" fuerza el guardado y espera la respuesta del servidor.
+- Subir una foto o exportar textos/JPG espera el guardado de cambios pendientes.
+- La ausencia de una fotografia principal muestra un mensaje claro, no Errno 2.
+- No cambia el formato de la base ni elimina registros viejos.
+
+PARA ACTUALIZAR CONSERVANDO TUS DATOS:
+1) Cierra la ventana negra del programa y sus pestañas del panel.
+2) Haz copia de seguridad de toda la carpeta GO_Arequipa_Datos.
+3) Compila el nuevo EXE usando Actions en GitHub.
+4) COLOCA el nuevo GO_Arequipa_Noticias.exe en la MISMA carpeta que el anterior,
+   y reemplaza solo el EXE. NO muevas ni borres GO_Arequipa_Datos.
+5) Abre el EXE, entra con tu MISMA clave y revisa una noticia editándola.
+6) Comprueba el mensaje "Cambios guardados correctamente", actualiza la página
+   y confirma que se conserva el texto.
+
+Si abriste un EXE desde otra carpeta, puede haber creado una SEGUNDA carpeta
+GO_Arequipa_Datos: los datos no necesariamente se han borrado. Localiza la
+carpeta anterior y conserva una copia antes de mover archivos.

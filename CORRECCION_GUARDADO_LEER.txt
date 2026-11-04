@@ -1,0 +1,41 @@
+GO AREQUIPA NOTICIAS - CORRECCION DE GUARDADO, JPG Y RUTAS
+===========================================================
+
+Este proyecto es la version corregida para construir de nuevo el .EXE en GitHub.
+No se incluyen contrasenas ni datos personales de tu computadora.
+
+QUE CORRIGE
+1. Guardado automatico cuando editas cintillo, titular, bajada, copy, estado y notas.
+2. Confirmacion en pantalla solo cuando SQLite confirma que guardo.
+3. Al subir fotos o descargar JPG/TXT, guarda primero cambios pendientes.
+4. Falla de fotografia vacia: mensaje legible en lugar de [Errno 2].
+5. Rutas absolutas para guardar base de noticias/fotos siempre en la misma carpeta.
+6. Copia de seguridad automatica de la base al abrir (maximo 5 copias).
+7. Pruebas de persistencia en la compilacion de Windows.
+
+PASOS SIN INSTALAR NADA EN TU PC
+1. Cierra GO_Arequipa_Noticias.exe y la ventana negra de la aplicacion.
+2. IMPORTANTE: copia toda tu carpeta GO_Arequipa_Datos a otra ubicacion segura.
+3. Descomprime este ZIP; entra a la carpeta descomprimida.
+4. En GitHub abre tu repositorio GO-Arequipa-Noticias > Code > Add file > Upload files.
+5. Sube el CONTENIDO del ZIP DESCOMPRIMIDO a la RAIZ del repositorio,
+   no una carpeta adicional ni el archivo ZIP.
+   Si GitHub advierte que algunos archivos ya existen, acepta actualizar/sustituir.
+   Comprueba que sigue existiendo .github/workflows/compilar-windows.yml.
+6. Pulsa Commit changes.
+7. En GitHub entra a Actions > Crear GO Arequipa Noticias EXE > Run workflow.
+8. Comprueba resultado verde: Success. Descarga el artefacto y extrae el nuevo EXE.
+9. Reemplaza solo el ejecutable anterior en LA MISMA CARPETA donde estaba.
+   NO BORRES, NO MUEVAS ni sustituyas GO_Arequipa_Datos.
+10. Abre el nuevo EXE e inicia sesion con la contrasena habitual.
+11. Edita un titular; tras una breve pausa debe decir Cambios guardados correctamente.
+12. Actualiza el navegador y verifica que el cambio permanece.
+13. Para generar JPG, primero sube fotografia autorizada, revisa el credito,
+    confirma derechos y aprueba la noticia.
+
+AVISO
+No se ha podido compilar/probar el EXE de Windows en este entorno Linux.
+Se verificaron sintaxis Python, sintaxis JS, escritura y reapertura SQLite,
+y el respaldo. En GitHub se ejecutan pruebas adicionales antes de compilar.
+
+Si aun muestra error, copia SOLO el texto del mensaje, sin contrasenas.

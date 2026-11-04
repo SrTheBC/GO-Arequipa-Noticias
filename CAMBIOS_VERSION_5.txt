@@ -1,0 +1,13 @@
+GO AREQUIPA NOTICIAS 5.0 — GEMINI
+
+Se añadió Configurar Gemini en el menú del panel web. La clave se pega UNA VEZ y se guarda exclusivamente en GO_Arequipa_Datos/.env de la PC; jamás en el ZIP, EXE o GitHub.
+
+Para usarla: abrir .exe -> iniciar sesión -> Configurar Gemini -> pegar clave -> Guardar y probar conexión -> abrir noticia -> Generar nuevos textos para esta noticia.
+
+El programa continúa buscando mediante RSS cada hora mientras esté abierto. Redacción con IA en las noticias nuevas y por petición en las ya existentes. Siempre sujeto a revisión humana antes de publicar.
+
+Si falla la conexión, el sistema usa un borrador local breve y avisa; nunca afirma que el copy está verificado. La prueba de conexión consume una solicitud de Gemini.
+
+No publiques ni subas tu carpeta GO_Arequipa_Datos ni su .env al repositorio público.
+
+Para compilar: GitHub Actions -> Crear GO Arequipa Noticias EXE -> Run workflow, tras subir los archivos del proyecto a la raíz.

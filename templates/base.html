@@ -1,0 +1,11 @@
+<!doctype html><html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}GO Arequipa Noticias{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}">
+</head><body>
+<header><div class="brand"><div class="brandlogo">GO</div><div><strong>GO AREQUIPA</strong><small>REDACCIÓN · NOTICIAS</small></div></div>
+{% if session.get('auth') %}<div class="actions"><a href="{{ url_for('index') }}">Panel</a><a href="{{ url_for('configuracion') }}">Configurar Gemini</a><a href="{{ canva_link }}" target="_blank" rel="noopener noreferrer">Abrir Canva</a><form action="{{ url_for('logout') }}" method="post"><input type="hidden" name="csrf" value="{{ csrf_token }}"><button class="ghost" type="submit">Salir</button></form></div>{% endif %}</header>
+<main>{% with messages = get_flashed_messages(with_categories=true) %}{% for cat,msg in messages %}<div class="alert {{cat}}">{{msg}}</div>{% endfor %}{% endwith %}
+{% block body %}{% endblock %}</main>
+<footer>GO Arequipa Noticias · Las noticias y las imágenes requieren verificación editorial antes de publicar. · Sistema independiente de ChatGPT. · <strong>Versión: {{ app_version }}</strong></footer>
+</body></html>

@@ -1,0 +1,43 @@
+GO AREQUIPA NOTICIAS - VERSION 3.1: ERROR DE GENERACION JPG
+
+ESTA VERSION CORRIGE EL ERROR DE RUTA VACIA Y PERMITE COMPROBAR QUE EL
+EJECUTABLE NUEVO SE ESTA EJECUTANDO.
+
+ANTES DE ACTUALIZAR:
+- Cierra completamente el EXE y su ventana negra.
+- Haz una copia de seguridad de TODA la carpeta GO_Arequipa_Datos.
+- No subas GO_Arequipa_Datos a GitHub: contiene contraseña, base de datos y fotos.
+
+ACTUALIZACION SIN INSTALAR NADA EN WINDOWS:
+1. Descomprime este ZIP en tu computadora.
+2. Ve a GitHub > tu repositorio GO-Arequipa-Noticias > Code.
+3. Sube a la raíz de la rama principal los archivos del ZIP, incluyendo
+   graphics.py, app.py, templates/ y tests/. No subas el ZIP sin extraer.
+4. Confirma los cambios (Commit changes).
+5. Ve a Actions > Crear GO Arequipa Noticias EXE > Run workflow.
+6. Espera a que la ejecución termine con Success y descarga el Artifact.
+7. Extrae GO_Arequipa_Noticias.exe. Sustituye SOLO el EXE viejo (misma carpeta).
+8. Abre el EXE nuevo. Abajo del panel debe aparecer EXACTAMENTE:
+   "Versión: 3.1 - Generador JPG corregido".
+   SI NO APARECE, SIGUES ABRIENDO EL EJECUTABLE ANTIGUO.
+
+PARA GENERAR EL JPG:
+1. En la noticia, en "Fotografía de referencia", selecciona una FOTO JPG
+   PNG o WebP de tu computadora (ideal >=1080 px) con derechos de uso.
+2. Haz clic "Guardar fotografía". Debe verse la foto en la ficha.
+3. Confirma los derechos de publicación y la atribución.
+4. Selecciona estado "Aprobada" y guarda la revisión.
+5. Pulsa "Generar diseño original JPG".
+
+IMPORTANTE: la foto que aparece como ENLACE DE REFERENCIA NO se descarga ni
+se guarda automáticamente. Si solo tienes el enlace, el generador no tiene
+ningún archivo con el que trabajar.
+
+PRUEBAS INCLUIDAS:
+- Verificación del botón de exportación sin imagen: mensaje legible.
+- Subida de imagen válida y exportación final JPG 1080 x 1350.
+- Estas pruebas se ejecutan también en GitHub Actions antes de compilar.
+
+SI LA VERSION 3.1 MUESTRA UN FALLO DIFERENTE:
+Copia únicamente el texto del error y di si subiste una foto. NO compartas
+.env, contraseñas o la base de datos.

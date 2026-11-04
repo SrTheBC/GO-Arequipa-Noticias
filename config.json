@@ -1,0 +1,40 @@
+{
+  "project": "GO Arequipa Noticias",
+  "timezone": "America/Lima",
+  "max_age_hours": 24,
+  "max_new_per_run": 12,
+  "sources": [
+    {
+      "name": "El Búho",
+      "url": "https://elbuho.pe/feed/",
+      "type": "rss",
+      "enabled": true
+    },
+    {
+      "name": "RPP Noticias",
+      "url": "https://rpp.pe/rss",
+      "type": "rss",
+      "enabled": true
+    },
+    {
+      "name": "La República",
+      "url": "https://larepublica.pe/rss/home.xml",
+      "type": "rss",
+      "enabled": true
+    }
+  ],
+  "national_exception_terms": [
+    "terremoto de magnitud 7",
+    "terremoto de magnitud 8",
+    "emergencia nacional",
+    "estado de emergencia nacional",
+    "renuncia del presidente",
+    "renuncia de la presidenta",
+    "vacancia presidencial",
+    "fallece el presidente",
+    "fallece la presidenta",
+    "resultados oficiales de las elecciones generales",
+    "se suspenden las elecciones generales",
+    "anulan las elecciones generales"
+  ]
+}

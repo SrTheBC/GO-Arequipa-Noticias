@@ -1,0 +1,24 @@
+GO AREQUIPA NOTICIAS — CORRECCIÓN V4.1
+=======================================
+
+ESTA DESCARGA CONTIENE CÓDIGO PARA COMPILAR WINDOWS, NO UN .EXE LISTO.
+
+1. Cierra el ejecutable anterior y haz copia de GO_Arequipa_Datos.
+2. En GitHub abre GO-Arequipa-Noticias > Code > Add file > Upload files.
+3. Sube todos los archivos de este parche a la RAÍZ del repositorio conservando
+   las rutas de las subcarpetas; confirma los cambios.
+4. Ve a Actions > Crear GO Arequipa Noticias EXE > Run workflow.
+5. Descarga el nuevo artifact generado si la compilación termina correctamente.
+6. Sustituye SOLO el .exe anterior, SIN borrar GO_Arequipa_Datos.
+7. En la interfaz verás la versión "4.1 - Copys sin avisos y cinco hashtags".
+8. En noticias antiguas pendientes/revisadas se retira la frase automática
+   de verificación y se agregan cinco hashtags al final del copy.
+   Noticias aprobadas/publicadas permanecen sin cambios por seguridad.
+
+IMPORTANTE:
+- El rótulo geográfico al inicio (#Arequipa | o #Perú |) es APARTE de los
+  cinco hashtags de la última línea.
+- Ninguna etiqueta confirma los hechos ni el derecho a usar imágenes.
+- Para publicar, revisa que la información se haya contrastado con las fuentes.
+- Si ya editaste una noticia, tus párrafos no se sustituyen por otros nuevos;
+  solo se limpia la frase genérica y se normaliza el cierre de hashtags.

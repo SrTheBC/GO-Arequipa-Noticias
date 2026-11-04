@@ -1,0 +1,139 @@
+{% extends 'base.html' %}{% block body %}
+<div class="pagehead"><div><div class="eyebrow">FICHA EDITORIAL · {{item['region']|upper}}</div><h1>Noticia #{{item['id']}}</h1><p>{{item['source']}} · {{item['source_published']|lima}} (Arequipa) · <a target="_blank" rel="noopener noreferrer" href="{{item['source_url']}}">Abrir fuente original ↗</a></p></div><a class="btnsmall" href="{{url_for('index')}}">Volver al panel</a></div>
+<div class="notice"><strong>Importante:</strong> {{item['ai_status'].replace('_',' ')}}. No está verificado de forma independiente. Comprueba hechos, fecha y derechos de la fotografía antes de aprobar.</div>
+<div class="notice"><strong>Redacción:</strong> los cintillos se generan según el tema de cada noticia. Si no has configurado OpenAI API, el sistema produce un copy breve a partir de los datos de la fuente; para una noticia extensa y verificable se requiere revisión del editor.</div>
+<div class="detailgrid"><div>
+<form id="newsform" action="{{url_for('save',news_id=item['id'])}}" method="post" class="editbox"><input type="hidden" name="csrf" value="{{csrf_token}}">
+<label>Cintillo</label><input name="cintillo" maxlength="100" value="{{item['cintillo']}}" required>
+<label>Título grande</label><textarea name="titulo" rows="3" required>{{item['titulo']}}</textarea>
+<label>Texto pequeño</label><textarea name="bajada" rows="3" required>{{item['bajada']}}</textarea>
+<label>Copy para redes sociales</label><p class="muted small">El copy comienza con #Arequipa | o #Perú | y termina con exactamente cinco hashtags relevantes. Los avisos internos de verificación se muestran fuera del texto de publicación.</p><textarea name="copy_text" rows="11" required>{{item['copy_text']}}</textarea>
+<button type="button" class="secondary" id="copy-social" style="margin-bottom:12px">Copiar copy para publicar</button>
+<label>Plantilla</label><select name="model"><option value="modelo_1" {% if item['model']=='modelo_1' %}selected{% endif %}>Modelo 1 — Retrato principal</option><option value="modelo_2" {% if item['model']=='modelo_2' %}selected{% endif %}>Modelo 2 — Contexto + círculo secundario opcional</option></select>
+<label>Estado editorial</label><select name="status">{% for x in ['pendiente','revisada','aprobada','publicada','descartada'] %}<option value="{{x}}" {% if item['status']==x %}selected{% endif %}>{{x|capitalize}}</option>{% endfor %}</select>
+<label>Crédito de fotografía / licencia</label><input name="photo_credit" value="{{item['photo_credit']}}" placeholder="Autor, fuente, licencia o autorización">
+<label class="checkline"><input type="checkbox" name="photo_rights_confirmed" value="1" {% if item['photo_rights_confirmed'] %}checked{% endif %}> Confirmo que tengo permiso para publicar esta imagen</label>
+<label>Notas de verificación / seguimiento</label><textarea name="notes" rows="3" placeholder="Fuentes consultadas, correcciones, por qué es relevante">{{item['notes']}}</textarea>
+<div id="save-status" class="save-status" role="status" aria-live="polite">Sin cambios pendientes</div>
+<button type="submit">Guardar revisión ahora</button>
+</form>
+<form method="post" action="{{url_for('redraft',news_id=item['id'])}}" onsubmit="return confirm('¿Volver a redactar? Se reemplazarán el cintillo, titular, bajada y copy actuales. Tus fotografías y fuente se conservan.');" style="margin-top:12px"><input type="hidden" name="csrf" value="{{csrf_token}}"><button type="submit" class="secondary" {% if item['status']=='publicada' %}disabled{% endif %}>Generar nuevos textos para esta noticia</button></form>
+<p class="muted small">Esta acción reemplaza los textos de esta ficha y la devuelve a Pendiente para revisión. Los cambios manuales que ya guardaste no se modifican automáticamente.</p>
+</div>
+<div class="sidecolumn"><section class="panel"><h2>Fotografía de referencia</h2>
+{% if item['photo_url'] %}<p class="muted">Candidata detectada automáticamente. No equivale a autorización de uso.</p><a href="{{item['photo_url']}}" target="_blank" rel="noopener noreferrer">Abrir fotografía candidata ↗</a>{% else %}<p class="muted">No se encontró una fotografía en los metadatos. Busca una foto oficial o autorizada relacionada con el hecho.</p>{% endif %}
+{% if photo_ready %}<div class="photo"><img src="{{url_for('view_photo',news_id=item['id'])}}" alt="Foto autorizada cargada por editor"></div><p class="muted"><strong>Fotografía principal guardada.</strong> Puedes exportar después de confirmar derechos y aprobar la noticia.</p>{% else %}<p class="muted"><strong>Falta la fotografía principal.</strong> El enlace de foto sugerida no reemplaza el paso de subir el archivo JPG, PNG o WebP desde tu equipo. Este paso es obligatorio para exportar JPG.</p>{% endif %}
+<form method="post" enctype="multipart/form-data" action="{{url_for('photo',news_id=item['id'])}}"><input type="hidden" name="csrf" value="{{csrf_token}}"><label>Subir fotografía propia o con permiso</label><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required><button type="submit" class="secondary">Guardar fotografía</button></form></section>
+<section class="panel"><h2>Foto secundaria (Modelo 2)</h2><p class="muted">Opcional. Se recorta en un círculo en la parte superior izquierda. Debes tener derechos de uso sobre ella.</p>
+<form method="post" enctype="multipart/form-data" action="{{url_for('inset_photo',news_id=item['id'])}}"><input type="hidden" name="csrf" value="{{csrf_token}}"><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required><button type="submit" class="secondary">Subir fotografía secundaria</button></form></section>
+<section class="panel"><h2>Exportación</h2><p class="muted">Edita, guarda y aprueba antes de generar la gráfica.</p><a class="actionlink" href="{{url_for('download_copy',news_id=item['id'])}}">Descargar textos (.txt)</a><a class="actionlink" href="{{canva_link}}" target="_blank" rel="noopener noreferrer">Abrir plantilla de Canva</a>{% if photo_ready and item['photo_rights_confirmed'] and item['status'] in ['aprobada','publicada'] %}<a class="actionlink" href="{{url_for('download_design',news_id=item['id'])}}">Generar diseño original JPG (1080 × 1350)</a>{% else %}<p class="muted"><strong>Para habilitar el JPG:</strong> 1) sube una foto principal; 2) confirma su licencia; 3) selecciona estado «Aprobada»; 4) guarda los cambios.</p><a class="actionlink" href="{{url_for('download_design',news_id=item['id'])}}">Comprobar requisitos para generar JPG</a>{% endif %}</section>
+<section class="panel"><h2>Información recibida</h2><div class="eyebrow">TITULAR DE FUENTE</div><p>{{item['original_title']}}</p><div class="eyebrow">EXTRACTO</div><p class="muted">{{item['excerpt']}}</p><div class="eyebrow">TEXTO ACCESIBLE PARA CONTRASTE</div><p class="muted small">{{item['story_text'][:1400] or 'No se extrajo el texto. Abre la fuente original.'}}</p></section></div></div>
+<script>
+(function () {
+  const button = document.getElementById('copy-social');
+  const copy = document.querySelector('textarea[name="copy_text"]');
+  if (!button || !copy) return;
+  button.addEventListener('click', async function () {
+    try {
+      await navigator.clipboard.writeText(copy.value);
+      button.textContent = 'Copy copiado';
+    } catch (e) {
+      copy.focus(); copy.select();
+      button.textContent = 'Texto seleccionado: pulsa Ctrl + C';
+    }
+  });
+})();
+</script>
+<script>
+// Guardado automático y antes de cargar fotografías o exportar JPG.
+// La fuente de verdad es SQLite: no anunciamos guardado hasta recibir OK del servidor.
+(function () {
+  const form = document.getElementById('newsform');
+  const hint = document.getElementById('save-status');
+  if (!form || !hint || !window.fetch || !window.FormData) return;
+  let revision = 0;
+  let lastSaved = 0;
+  let flight = null;
+  let timer = null;
+  let lastError = false;
+  function status(text, bad) {
+    hint.textContent = text;
+    hint.style.color = bad ? '#a62d20' : '';
+  }
+  function changed() {
+    revision += 1;
+    lastError = false;
+    status('Cambios pendientes de guardar...');
+    clearTimeout(timer);
+    timer = setTimeout(() => { saveNow(); }, 900);
+  }
+  form.querySelectorAll('input:not([type="hidden"]), textarea, select').forEach(el => {
+    el.addEventListener('input', changed);
+    el.addEventListener('change', changed);
+  });
+  async function saveNow() {
+    clearTimeout(timer);
+    if (flight) await flight;
+    if (lastSaved >= revision) return !lastError;
+    const savingRevision = revision;
+    const data = new FormData(form);
+    status('Guardando cambios...');
+    flight = (async () => {
+      try {
+        const result = await fetch(form.action, {
+          method: 'POST', credentials: 'same-origin',
+          headers: {'X-GO-Autosave': '1', 'Accept': 'application/json'},
+          body: data
+        });
+        if (!result.ok || !result.headers.get('content-type')?.includes('application/json')) {
+          throw new Error('El servidor no confirmó el guardado (' + result.status + ')');
+        }
+        const response = await result.json();
+        if (!response.ok) throw new Error('El servidor rechazó los cambios');
+        lastSaved = Math.max(lastSaved, savingRevision);
+        // Mostrar inmediatamente en el formulario el copy normalizado por SQLite.
+        if (revision === savingRevision && typeof response.copy_text === 'string') {
+          const copyField = form.querySelector('textarea[name="copy_text"]');
+          if (copyField) copyField.value = response.copy_text;
+        }
+        lastError = false;
+        if (lastSaved === revision) status('Cambios guardados. El servidor revisó los cinco hashtags finales.');
+        else { status('Hay cambios nuevos pendientes...'); clearTimeout(timer); timer = setTimeout(() => saveNow(), 100); }
+        return true;
+      } catch (error) {
+        lastError = true;
+        status('NO SE GUARDÓ. Pulsa «Guardar revisión ahora» e intenta nuevamente.', true);
+        return false;
+      }
+    })();
+    const ok = await flight;
+    flight = null;
+    if (!ok) return false;
+    if (lastSaved < revision) return saveNow();
+    return true;
+  }
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const ok = await saveNow();
+    if (ok) status('Cambios guardados correctamente');
+  });
+  document.querySelectorAll('a[href*="/exportar"], a[href*="/dise%C3%B1o"], a[href*="/diseño"]').forEach(link => {
+    link.addEventListener('click', async event => {
+      if (lastSaved >= revision) return;
+      event.preventDefault();
+      if (await saveNow()) window.location.assign(link.href);
+    });
+  });
+  document.querySelectorAll('form[enctype="multipart/form-data"]').forEach(uploadForm => {
+    uploadForm.addEventListener('submit', async event => {
+      if (lastSaved >= revision) return;
+      event.preventDefault();
+      if (await saveNow()) uploadForm.submit();
+    });
+  });
+  window.addEventListener('beforeunload', event => {
+    if (lastSaved < revision) { event.preventDefault(); event.returnValue = ''; }
+  });
+})();
+</script>
+{% endblock %}
