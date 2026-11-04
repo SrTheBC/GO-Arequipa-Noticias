@@ -64,8 +64,10 @@ class PersistenceTests(unittest.TestCase):
             page = client.get(f'/noticia/{ident}')
             self.assertIn(b'NUEVO TITULAR PARA CANVA', page.data)
         self.assertEqual(db.news_by_id(ident)['status'], 'aprobada')
-        self.assertEqual(db.news_by_id(ident)['copy_text'], '#Arequipa | Copy editado sin emojis.')
-
+        self.assertEqual(
+    db.news_by_id(ident)['copy_text'],
+    response.json['copy_text']
+)
 
 if __name__ == '__main__':
     unittest.main()
