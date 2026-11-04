@@ -64,10 +64,14 @@ class PersistenceTests(unittest.TestCase):
             page = client.get(f'/noticia/{ident}')
             self.assertIn(b'NUEVO TITULAR PARA CANVA', page.data)
         self.assertEqual(db.news_by_id(ident)['status'], 'aprobada')
-        self.assertEqual(
-    db.news_by_id(ident)['copy_text'],
-    response.json['copy_text']
-)
+        # El formulario conserva los párrafos del editor y normaliza el cierre
+        # según la política vigente: exactamente cinco hashtags finales.
+        saved_copy = db.news_by_id(ident)['copy_text']
+        self.assertEqual(saved_copy, response.json['copy_text'])
+        self.assertTrue(saved_copy.startswith('#Arequipa | Copy editado sin emojis.'))
+        self.assertEqual(editor.news_engine.editorial.hashtag_count_final(saved_copy), 5)
+        self.assertNotIn('Información pendiente de contraste editorial', saved_copy)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,138 +1,193 @@
-"""Piezas originales de estilo GO Arequipa en JPG; no modifica diseños alojados en Canva."""
-import os
+"""Exportador editorial GO Arequipa: imágenes locales, logo real y recortes ajustables.
+No edita automáticamente diseños alojados en Canva.
+"""
 import math
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
 
 SIZE = (1080, 1350)
 
 
+def clamp_float(value, low, high, default):
+    try:
+        result = float(value)
+        if not math.isfinite(result):
+            return float(default)
+        return max(float(low), min(float(high), result))
+    except (TypeError, ValueError):
+        return float(default)
+
+
+def _get(row, key, default):
+    try:
+        value = row[key]
+        return default if value is None else value
+    except (KeyError, IndexError, TypeError):
+        return default
+
+
 def font(bold=False, size=42):
-    files = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "C:/Windows/Fonts/arialbd.ttf" if bold else "C:/Windows/Fonts/arial.ttf",
+    paths = [
+        'C:/Windows/Fonts/arialbd.ttf' if bold else 'C:/Windows/Fonts/arial.ttf',
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf' if bold else '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
     ]
-    for p in files:
-        if Path(p).exists():
-            return ImageFont.truetype(p, size)
+    for path in paths:
+        if Path(path).is_file():
+            return ImageFont.truetype(path, size)
     return ImageFont.load_default()
 
 
-def fit_lines(d, txt, max_width, max_height, start_size=58, min_size=29, bold=True):
-    txt = " ".join(txt.split())
-    if not txt:
+def textwidth(draw, text, ft):
+    box = draw.textbbox((0, 0), text, font=ft)
+    return box[2] - box[0]
+
+
+def fit_lines(draw, text, max_width, max_height, start_size=60, min_size=28, bold=True):
+    text = ' '.join(str(text or '').split())
+    if not text:
         return [], font(bold, start_size), 0
     for size in range(start_size, min_size - 1, -1):
         ft = font(bold, size)
-        lines = []
-        current = ""
-        for word in txt.split():
-            prospective = (current + " " + word).strip()
-            if d.textbbox((0, 0), prospective, font=ft)[2] <= max_width:
-                current = prospective
+        lines, current = [], ''
+        for word in text.split():
+            new = (current + ' ' + word).strip()
+            if textwidth(draw, new, ft) <= max_width:
+                current = new
             else:
                 if current:
                     lines.append(current)
                 current = word
         if current:
             lines.append(current)
-        line_height = round(size * 1.14)
-        if lines and len(lines) * line_height <= max_height and all(d.textbbox((0,0),line,font=ft)[2] <= max_width for line in lines):
-            return lines, ft, line_height
-    raise ValueError("Texto demasiado largo para la plantilla: acorta el titular o la bajada")
+        step = round(size * (1.19 if bold else 1.24))
+        if lines and all(textwidth(draw, line, ft) <= max_width for line in lines) and len(lines)*step <= max_height:
+            return lines, ft, step
+    raise ValueError('El titular o texto pequeño es demasiado largo para la plantilla. Redúcelo y vuelve a generar la vista previa.')
 
 
-def write_lines(d, lines, ft, x, y, step, fill="#090909", spacing=0):
-    for s in lines:
-        d.text((x, y), s, font=ft, fill=fill, stroke_width=0)
-        y += step + spacing
-    return y
+def crop_focus(im, target_size, focus_x=50, focus_y=50, zoom=1):
+    """Recorte en coordenadas normalizadas: X/Y=0 al inicio y 100 al final.
+    El valor Y=32 favorece el tercio superior en retratos; no afirma detectar rostros.
+    """
+    im = im.convert('RGB')
+    dest_w, dest_h = target_size
+    zoom = clamp_float(zoom, 1, 3, 1)
+    ratio = dest_w / dest_h
+    w, h = im.size
+    crop_w = min(float(w), float(h) * ratio) / zoom
+    crop_h = crop_w / ratio
+    crop_x = max(0, w - crop_w) * clamp_float(focus_x, 0, 100, 50) / 100
+    crop_y = max(0, h - crop_h) * clamp_float(focus_y, 0, 100, 35) / 100
+    return im.crop((round(crop_x), round(crop_y), round(crop_x+crop_w), round(crop_y+crop_h))).resize(target_size, Image.Resampling.LANCZOS)
 
 
-def logo(draw, canvas):
-    logo_path = Path("assets/logo_go.png")
-    if logo_path.exists():
-        im = Image.open(logo_path).convert("RGBA")
-        im.thumbnail((166, 166))
-        canvas.paste(im, (880, 40), im)
-    else:
-        draw.ellipse((891, 47, 1042, 198), fill="#f7ae00", outline="#101010", width=5)
-        draw.text((917, 71), "GO", font=font(True, 49), fill="black")
-        draw.text((905, 136), "AREQUIPA", font=font(True, 18), fill="black")
-        draw.text((925, 159), "NOTICIAS", font=font(True, 13), fill="black")
+def gradient(img):
+    """Sombra naranja transparente, interpolada sin bucles por píxel de Python."""
+    band = Image.new('RGBA', (1, SIZE[1]), (0, 0, 0, 0))
+    points=[]
+    for y in range(SIZE[1]):
+        t = max(0.0, min(1.0, (y-610)/600))
+        alpha = int(250 * (t**0.62)) if t else 0
+        points.append((255, round(155-62*t), 0, alpha))
+    band.putdata(points)
+    return Image.alpha_composite(img, band.resize(SIZE, Image.Resampling.NEAREST))
 
 
-def fade(canvas):
-    # Degradado naranja editorial inspirado en capturas del usuario.
-    layer = Image.new("RGBA", SIZE, (0, 0, 0, 0))
-    px = layer.load()
-    for y in range(650, SIZE[1]):
-        amount = min(1.0, max(0, (y - 650) / 500))
-        a = int(245 * (amount ** 0.60))
-        for x in range(SIZE[0]):
-            px[x, y] = (255, int(150 - 70 * amount), 0, a)
-    return Image.alpha_composite(canvas, layer)
+def draw_logo(canvas, logo_path):
+    path = Path(str(logo_path)) if logo_path else Path('assets/logo_go.png')
+    if not path.is_file():
+        raise ValueError('No se encontró el logotipo del medio. Ingresa a «Logo del medio» para subirlo.')
+    with Image.open(path) as original:
+        logo = original.convert('RGBA')
+    logo.thumbnail((175, 175), Image.Resampling.LANCZOS)
+    pos=(SIZE[0]-logo.width-36, 38)
+    canvas.alpha_composite(logo, pos)
 
 
-def inset_circle(canvas, inset_file):
-    if not inset_file or not str(inset_file).strip() or not Path(inset_file).is_file():
-        return canvas
-    diameter = 290
-    sample = ImageOps.fit(Image.open(inset_file).convert("RGB"), (diameter, diameter), method=Image.Resampling.LANCZOS)
-    mask = Image.new("L", (diameter, diameter), 0)
-    d = ImageDraw.Draw(mask)
-    d.ellipse((0, 0, diameter-1, diameter-1), fill=255)
-    canvas.paste(sample.convert("RGBA"), (40, 35), mask)
-    d = ImageDraw.Draw(canvas)
-    d.ellipse((38, 33, 332, 327), outline="white", width=10)
-    return canvas
+def inset_circle(canvas, inset_path, item):
+    if not inset_path or not str(inset_path).strip() or not Path(str(inset_path)).is_file():
+        return
+    diameter = 315
+    with Image.open(inset_path) as source:
+        square = crop_focus(source, (diameter, diameter),
+                            _get(item,'photo_inset_x',50),_get(item,'photo_inset_y',32),
+                            _get(item,'photo_inset_zoom',1)).convert('RGBA')
+    # Fondo oscuro para bordes de fotografías de tonos claros.
+    draw=ImageDraw.Draw(canvas)
+    x,y=37,30
+    draw.ellipse((x-4,y-4,x+diameter+4,y+diameter+4),fill='#151515')
+    mask=Image.new('L',(diameter,diameter),0)
+    ImageDraw.Draw(mask).ellipse((0,0,diameter-1,diameter-1),fill=255)
+    canvas.paste(square,(x,y),mask)
+    draw=ImageDraw.Draw(canvas)
+    draw.ellipse((x-4,y-4,x+diameter+4,y+diameter+4),outline='white',width=10)
 
 
-def render(item, photo_file, destination, inset_file=None):
-    # Una ruta vacía se convierte en Path("."), que existe pero es una carpeta.
-    # En ese caso Image.open("") lanzaba [Errno 2] No such file or directory: ''.
-    # Requerimos explícitamente una ruta no vacía a un archivo real.
-    if photo_file is None or not str(photo_file).strip():
-        raise ValueError("Primero sube una fotografía principal para generar el diseño JPG")
-    photo_path = Path(str(photo_file).strip()).expanduser()
-    if not photo_path.is_file():
-        raise ValueError("No se encontró la fotografía principal. Vuelve a subirla desde la ficha editorial")
-    if not item["photo_rights_confirmed"]:
-        raise ValueError("Confirma los derechos de uso de la imagen")
-    try:
-        with Image.open(photo_path) as photograph:
-            picture = photograph.convert("RGB")
-    except (OSError, ValueError) as exc:
-        raise ValueError("No se pudo leer la fotografía principal. Vuelve a subirla como JPG, PNG o WebP") from exc
-    img = ImageOps.fit(picture, SIZE, method=Image.Resampling.LANCZOS, centering=(0.5, 0.37)).convert("RGBA")
-    img = fade(img)
-    if item["model"] == "modelo_2":
-        img = inset_circle(img, inset_file)
-    dr = ImageDraw.Draw(img)
-    logo(dr, img)
+def render(item, photo_file, destination, inset_file=None, logo_path=None, preview=False):
+    if not photo_file or not str(photo_file).strip():
+        raise ValueError('Primero sube una fotografía principal para crear el diseño.')
+    path=Path(str(photo_file).strip())
+    if not path.is_file():
+        raise ValueError('No se encontró la fotografía principal. Vuelve a subirla desde la noticia.')
+    if not preview and not _get(item,'photo_rights_confirmed',0):
+        raise ValueError('Confirma el permiso de publicación de la imagen antes de exportar.')
+    with Image.open(path) as source:
+        img=crop_focus(source,SIZE,_get(item,'photo_main_x',50),_get(item,'photo_main_y',36),
+                       _get(item,'photo_main_zoom',1)).convert('RGBA')
+    img=gradient(img)
+    model=_get(item,'model','modelo_1')
+    if model=='modelo_2':
+        inset_circle(img,inset_file,item)
+    draw_logo(img,logo_path)
+    dr=ImageDraw.Draw(img)
 
-    x, width = 80, 925
-    head_text = item["titulo"].strip().upper()
-    sub_text = item["bajada"].strip()
-    if not head_text or not sub_text:
-        raise ValueError("Completa titular y bajada primero")
-    title_lines, title_ft, title_step = fit_lines(dr, head_text, width, 330, 61, 34)
-    sub_lines, sub_ft, sub_step = fit_lines(dr, sub_text, width, 126, 29, 22, False)
-    head_height = len(title_lines) * title_step
-    sub_height = len(sub_lines) * sub_step
-    total = 62 + head_height + 32 + sub_height + 28
-    y_top = max(790, 1320 - total)
-    tag = " ".join(item["cintillo"].split()).upper()
-    tag_lines, tag_font, _ = fit_lines(dr, tag, 820, 40, 30, 23)
-    tag_text = tag_lines[0] if tag_lines else "GO AREQUIPA NOTICIAS"
-    tw = dr.textbbox((0, 0), tag_text, font=tag_font)[2]
-    dr.rounded_rectangle((x - 8, y_top-12, min(1040, x + tw+25), y_top+47), fill="#090909", radius=10)
-    dr.text((x + 5, y_top-3), tag_text, font=tag_font, fill="#ffb028")
-    pos = write_lines(dr, title_lines, title_ft, x, y_top+70, title_step)
-    rule_y = pos + 8
-    dr.rounded_rectangle((x, rule_y, x+120, rule_y+10), fill="#080808", radius=4)
-    write_lines(dr, sub_lines, sub_ft, x, rule_y+25, sub_step)
-    output = Path(destination)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    img.convert("RGB").save(output, "JPEG", quality=92, optimize=True)
-    return str(output)
+    cintillo=' '.join(str(_get(item,'cintillo','')).split()).upper()
+    titulo=' '.join(str(_get(item,'titulo','')).split()).upper()
+    bajada=' '.join(str(_get(item,'bajada','')).split())
+    if not all((cintillo,titulo,bajada)):
+        raise ValueError('Completa cintillo, título y texto pequeño para poder generar la imagen.')
+
+    margin=80
+    maxw=SIZE[0]-2*margin
+    head, f_head, h_head=fit_lines(dr,titulo,maxw,360,63,31,True)
+    sub, f_sub, h_sub=fit_lines(dr,bajada,maxw,135,29,22,False)
+    tag, f_tag, h_tag=fit_lines(dr,cintillo,805,85,32,22,True)
+    if len(tag)>2:
+        raise ValueError('El cintillo es demasiado largo para su espacio. Acórtalo.')
+    tagheight=len(tag)*h_tag+22
+    headlineheight=len(head)*h_head
+    subtitleheight=len(sub)*h_sub
+    # Acomodar desde abajo con área de seguridad de 38 px.
+    full=tagheight+23+headlineheight+16+11+25+subtitleheight
+    y=max(755,SIZE[1]-42-full)
+    if y+full>SIZE[1]-26:
+        raise ValueError('Los textos no caben en el diseño. Acorta el titular o el texto pequeño.')
+    tagwidth=max(textwidth(dr,t,f_tag) for t in tag)
+    dr.rounded_rectangle((margin-10,y-5, min(1040,margin+tagwidth+22), y+tagheight+1),radius=9,fill='#0b0b0b')
+    for line in tag:
+        dr.text((margin,y+7),line,fill='#ffae21',font=f_tag)
+        y+=h_tag
+    y += 22+23
+    for line in head:
+        dr.text((margin,y),line,font=f_head,fill='#070707')
+        y+=h_head
+    y += 16
+    dr.rounded_rectangle((margin,y,margin+120,y+10),radius=4,fill='#111111')
+    y += 30
+    for line in sub:
+        dr.text((margin,y),line,font=f_sub,fill='#101010')
+        y+=h_sub
+
+    if preview:
+        # Indicación solo de vista previa, nunca se añade al JPG publicado.
+        dr.rounded_rectangle((16, SIZE[1]-35,370,SIZE[1]-7), radius=6, fill=(20,20,20,170))
+        dr.text((28,SIZE[1]-32),'VISTA PREVIA · NO PUBLICAR',font=font(True,18),fill='white')
+
+    img=img.convert('RGB')
+    if hasattr(destination,'write'):
+        img.save(destination,'JPEG',quality=90,optimize=True)
+        return destination
+    out=Path(destination)
+    out.parent.mkdir(parents=True,exist_ok=True)
+    img.save(out,'JPEG',quality=93,optimize=True)
+    return str(out)

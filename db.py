@@ -52,7 +52,13 @@ def init_db():
               copy_text TEXT NOT NULL DEFAULT '',
               status TEXT NOT NULL DEFAULT 'pendiente',
               ai_status TEXT NOT NULL DEFAULT 'pendiente_verificacion',
-              notes TEXT NOT NULL DEFAULT ''
+              notes TEXT NOT NULL DEFAULT '',
+              photo_main_x REAL NOT NULL DEFAULT 50,
+              photo_main_y REAL NOT NULL DEFAULT 36,
+              photo_main_zoom REAL NOT NULL DEFAULT 1,
+              photo_inset_x REAL NOT NULL DEFAULT 50,
+              photo_inset_y REAL NOT NULL DEFAULT 32,
+              photo_inset_zoom REAL NOT NULL DEFAULT 1
             );
             CREATE INDEX IF NOT EXISTS news_date_idx ON news(source_published DESC);
             CREATE TABLE IF NOT EXISTS runs (
@@ -63,6 +69,13 @@ def init_db():
               errors TEXT NOT NULL DEFAULT ''
             );
         """)
+        # Compatibilidad con noticias.db de V5: nunca se descartan registros previos.
+        existing = {row[1] for row in c.execute("PRAGMA table_info(news)")}
+        for col, default in (("photo_main_x", 50), ("photo_main_y", 36),
+                             ("photo_main_zoom", 1), ("photo_inset_x", 50),
+                             ("photo_inset_y", 32), ("photo_inset_zoom", 1)):
+            if col not in existing:
+                c.execute(f"ALTER TABLE news ADD COLUMN {col} REAL NOT NULL DEFAULT {default}")
 
 
 def list_news(status=None):
@@ -97,7 +110,7 @@ def last_run():
 
 
 def edit_news(news_id, changes):
-    ALLOWED = {"status", "cintillo", "titulo", "bajada", "copy_text", "model", "photo_credit", "local_photo_path", "photo_rights_confirmed", "notes", "ai_status", "inset_photo_path"}
+    ALLOWED = {"status", "cintillo", "titulo", "bajada", "copy_text", "model", "photo_credit", "local_photo_path", "photo_rights_confirmed", "notes", "ai_status", "inset_photo_path", "photo_main_x", "photo_main_y", "photo_main_zoom", "photo_inset_x", "photo_inset_y", "photo_inset_zoom"}
     changes = {k: v for k, v in changes.items() if k in ALLOWED}
     if not changes:
         return False

@@ -19,7 +19,7 @@ import db
 import news_engine
 import graphics
 
-VERSION = "5.0 - Gemini integrado"
+VERSION = "6.0 - Editor visual + logo oficial"
 
 # Localiza las plantillas tanto en el proyecto como dentro de PyInstaller.
 BUNDLE_ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
@@ -41,6 +41,14 @@ db.actualizar_borradores_antiguos()
 db.normalizar_copys_antiguos()
 MEDIA = Path(os.getenv("MEDIA_PATH", "data/media"))
 MEDIA.mkdir(parents=True, exist_ok=True)
+def brand_logo_file():
+    """Logo privado configurable; si aún no se copió, usa el incluido en V6."""
+    selected = Path(os.getenv("GO_DATA_ROOT", "")) / "assets" / "logo_go.png" if os.getenv("GO_DATA_ROOT") else Path.cwd() / "assets" / "logo_go.png"
+    if selected.is_file():
+        return selected
+    return BUNDLE_ROOT / "assets" / "logo_go.png"
+
+
 scan_lock = threading.Lock()
 scan_state = {"active": False, "result": ""}
 
@@ -203,6 +211,12 @@ def save(news_id):
         request.form.get("copy_text", "")[:12000], item["region"],
         item["original_title"], item["excerpt"], item["source"])
     updated = db.edit_news(news_id, {
+        "photo_main_x": graphics.clamp_float(request.form.get("photo_main_x"), 0, 100, 50),
+        "photo_main_y": graphics.clamp_float(request.form.get("photo_main_y"), 0, 100, 36),
+        "photo_main_zoom": graphics.clamp_float(request.form.get("photo_main_zoom"), 1, 3, 1),
+        "photo_inset_x": graphics.clamp_float(request.form.get("photo_inset_x"), 0, 100, 50),
+        "photo_inset_y": graphics.clamp_float(request.form.get("photo_inset_y"), 0, 100, 32),
+        "photo_inset_zoom": graphics.clamp_float(request.form.get("photo_inset_zoom"), 1, 3, 1),
         "cintillo": request.form.get("cintillo", "")[:100],
         "titulo": request.form.get("titulo", "")[:300],
         "bajada": request.form.get("bajada", "")[:700],
@@ -332,6 +346,86 @@ def download_copy(news_id):
                      as_attachment=True, download_name=f"GO_Arequipa_noticia_{news_id}.txt")
 
 
+@app.get("/identidad/logo")
+def view_brand_logo():
+    path = brand_logo_file()
+    if not path.is_file():
+        abort(404)
+    return send_file(path, mimetype="image/png", max_age=0)
+
+
+@app.route("/identidad", methods=["GET", "POST"])
+@login_required
+def identidad():
+    if request.method == "POST":
+        upload = request.files.get("logo")
+        if not upload or not upload.filename:
+            flash("Selecciona primero un PNG o JPG de tu logotipo.", "error")
+            return redirect(url_for("identidad"))
+        try:
+            from PIL import Image, UnidentifiedImageError
+            with Image.open(upload.stream) as src:
+                if src.width < 160 or src.height < 160:
+                    raise ValueError("El logo necesita al menos 160 x 160 píxeles")
+                if src.width * src.height > 24000000:
+                    raise ValueError("El archivo de logo es demasiado grande")
+                img = src.convert("RGBA")
+                img.thumbnail((1600, 1600))
+                target = Path(os.getenv("GO_DATA_ROOT", str(Path.cwd()))) / "assets" / "logo_go.png"
+                target.parent.mkdir(parents=True, exist_ok=True)
+                tmp = target.with_suffix(".tmp.png")
+                img.save(tmp, "PNG")
+                tmp.replace(target)
+        except (ValueError, UnidentifiedImageError, OSError) as exc:
+            flash(f"No se pudo guardar el logotipo: {exc}", "error")
+            return redirect(url_for("identidad"))
+        flash("Logotipo actualizado. Se aplicará a todos los diseños nuevos.", "success")
+        return redirect(url_for("identidad"))
+    return render_template("identidad.html")
+
+
+@app.get("/noticia/<int:news_id>/foto_secundaria")
+@login_required
+def view_inset_photo(news_id):
+    item = db.news_by_id(news_id)
+    if not item or not item["inset_photo_path"] or not Path(item["inset_photo_path"]).is_file():
+        abort(404)
+    return send_file(item["inset_photo_path"], mimetype="image/jpeg", max_age=0)
+
+
+@app.post("/noticia/<int:news_id>/vista_previa")
+@login_required
+def vista_previa(news_id):
+    """Vista previa NO publicable, sin alterar SQLite y con encuadre aún sin guardar."""
+    item = db.news_by_id(news_id)
+    if not item:
+        abort(404)
+    photo_path = str(item["local_photo_path"] or "").strip()
+    if not photo_path or not Path(photo_path).is_file():
+        return jsonify({"error": "Primero sube una fotografía principal para ver el diseño."}), 400
+    state = dict(item)
+    state.update({
+        "model": request.form.get("model", state["model"]),
+        "cintillo": request.form.get("cintillo", state["cintillo"])[:100],
+        "titulo": request.form.get("titulo", state["titulo"])[:300],
+        "bajada": request.form.get("bajada", state["bajada"])[:700],
+    })
+    if state["model"] not in ("modelo_1", "modelo_2"):
+        return jsonify({"error": "Modelo de diseño inválido."}), 400
+    for key, minv, maxv, default in (("photo_main_x",0,100,50),("photo_main_y",0,100,36),
+                                    ("photo_main_zoom",1,3,1),("photo_inset_x",0,100,50),
+                                    ("photo_inset_y",0,100,32),("photo_inset_zoom",1,3,1)):
+        state[key] = graphics.clamp_float(request.form.get(key), minv, maxv, default)
+    try:
+        output = io.BytesIO()
+        graphics.render(state, photo_path, output, state["inset_photo_path"],
+                        logo_path=brand_logo_file(), preview=True)
+        output.seek(0)
+        return send_file(output, mimetype="image/jpeg", max_age=0)
+    except (ValueError, OSError) as exc:
+        return jsonify({"error": str(exc)[:220]}), 400
+
+
 @app.get("/noticia/<int:news_id>/diseño")
 @login_required
 def download_design(news_id):
@@ -351,7 +445,7 @@ def download_design(news_id):
         return redirect(url_for("detail", news_id=news_id))
     try:
         out = MEDIA / f"GO_Arequipa_{news_id}_{item['model']}.jpg"
-        graphics.render(item, path_text, out, item["inset_photo_path"])
+        graphics.render(item, path_text, out, item["inset_photo_path"], logo_path=brand_logo_file())
         return send_file(out, mimetype="image/jpeg", as_attachment=True, download_name=out.name)
     except (ValueError, OSError) as exc:
         # Mensaje comprensible de validación. El error nunca debe revelar .env ni claves.

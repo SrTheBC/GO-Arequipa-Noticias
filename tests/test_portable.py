@@ -14,6 +14,7 @@ class PortableStartupTests(unittest.TestCase):
             root = Path(tmp)
             pl.ensure_configuration(root)
             self.assertTrue((root / 'config.json').exists())
+            self.assertTrue((root / 'assets/logo_go.png').is_file())
             self.assertTrue((root / 'ACCESO_INICIAL.txt').exists())
             self.assertTrue((root / '.env').exists())
             first = (root / '.env').read_text()

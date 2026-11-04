@@ -1,3 +1,7 @@
+# GO Arequipa Noticias V6
+
+**Lee primero [`ACTUALIZACION_V6_LEEME.md`](ACTUALIZACION_V6_LEEME.md)** para instalar y utilizar el editor visual, el logotipo oficial y la vista previa.
+
 # GO Arequipa Noticias — Edición portátil para Windows
 
 Este paquete es el **proyecto de compilación** para un ejecutable `GO_Arequipa_Noticias.exe` de Windows 10/11 de 64 bits. **El archivo `.exe` no está incluido ni se compiló aquí**: se prepara para compilar con un runner `windows-latest` de GitHub Actions o desde una PC Windows con Python instalado (solo en el equipo de compilación).

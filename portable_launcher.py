@@ -45,6 +45,12 @@ def ensure_configuration(root: Path) -> None:
     if not cfg.exists():
         shutil.copyfile(bundled("config.json"), cfg)
     (root / "assets").mkdir(exist_ok=True)
+    # Incorporar logo original del medio solo en el primer arranque V6;
+    # jamás reemplazar uno que el editor haya personalizado.
+    bundled_logo = bundled("assets/logo_go.png")
+    selected_logo = root / "assets" / "logo_go.png"
+    if bundled_logo.is_file() and not selected_logo.exists():
+        shutil.copyfile(bundled_logo, selected_logo)
     (root / "data" / "media").mkdir(parents=True, exist_ok=True)
 
     env_file = root / ".env"

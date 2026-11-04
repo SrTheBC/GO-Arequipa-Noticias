@@ -1,7 +1,7 @@
 {% extends 'base.html' %}{% block body %}
 <div class="pagehead"><div><div class="eyebrow">FICHA EDITORIAL · {{item['region']|upper}}</div><h1>Noticia #{{item['id']}}</h1><p>{{item['source']}} · {{item['source_published']|lima}} (Arequipa) · <a target="_blank" rel="noopener noreferrer" href="{{item['source_url']}}">Abrir fuente original ↗</a></p></div><a class="btnsmall" href="{{url_for('index')}}">Volver al panel</a></div>
 <div class="notice"><strong>Importante:</strong> {{item['ai_status'].replace('_',' ')}}. No está verificado de forma independiente. Comprueba hechos, fecha y derechos de la fotografía antes de aprobar.</div>
-<div class="notice"><strong>Redacción:</strong> los cintillos se generan según el tema de cada noticia. Si no has configurado OpenAI API, el sistema produce un copy breve a partir de los datos de la fuente; para una noticia extensa y verificable se requiere revisión del editor.</div>
+<div class="notice"><strong>Redacción:</strong> los cintillos se generan según el tema de cada noticia. Si no has configurado Gemini, el sistema produce un copy breve a partir de los datos de la fuente; para una noticia extensa y verificable se requiere revisión del editor.</div>
 <div class="detailgrid"><div>
 <form id="newsform" action="{{url_for('save',news_id=item['id'])}}" method="post" class="editbox"><input type="hidden" name="csrf" value="{{csrf_token}}">
 <label>Cintillo</label><input name="cintillo" maxlength="100" value="{{item['cintillo']}}" required>
@@ -26,6 +26,31 @@
 <form method="post" enctype="multipart/form-data" action="{{url_for('photo',news_id=item['id'])}}"><input type="hidden" name="csrf" value="{{csrf_token}}"><label>Subir fotografía propia o con permiso</label><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required><button type="submit" class="secondary">Guardar fotografía</button></form></section>
 <section class="panel"><h2>Foto secundaria (Modelo 2)</h2><p class="muted">Opcional. Se recorta en un círculo en la parte superior izquierda. Debes tener derechos de uso sobre ella.</p>
 <form method="post" enctype="multipart/form-data" action="{{url_for('inset_photo',news_id=item['id'])}}"><input type="hidden" name="csrf" value="{{csrf_token}}"><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required><button type="submit" class="secondary">Subir fotografía secundaria</button></form></section>
+<section class="visual-panel"><div class="eyebrow">EDITOR GRÁFICO V6</div><h2>Ajustar fotos y previsualizar</h2>
+<p class="muted small">Ajusta cada imagen con los controles. El diseño se actualiza aquí antes de descargarlo; no modifica tu plantilla original de Canva. Los ajustes se guardan por noticia.</p>
+<div class="visual-section"><strong>Fotografía principal</strong>
+<label>Posición horizontal <output id="main-x-val">{{ item['photo_main_x']|round|int }}</output></label>
+<input form="newsform" type="range" name="photo_main_x" min="0" max="100" step="1" value="{{item['photo_main_x']}}">
+<label>Posición vertical <output id="main-y-val">{{ item['photo_main_y']|round|int }}</output></label>
+<input form="newsform" type="range" name="photo_main_y" min="0" max="100" step="1" value="{{item['photo_main_y']}}">
+<label>Zoom <output id="main-z-val">{{'%.2f'|format(item['photo_main_zoom'])}}×</output></label>
+<input form="newsform" type="range" name="photo_main_zoom" min="1" max="3" step="0.05" value="{{item['photo_main_zoom']}}">
+<div class="visual-actions"><button type="button" data-reset="main" class="secondary">Centrar foto principal</button></div></div>
+<div class="visual-section" id="inset-controls"><strong>Fotografía del círculo (Modelo 2)</strong>
+{% if item['inset_photo_path'] %}<div class="photo"><img src="{{url_for('view_inset_photo',news_id=item['id'])}}" alt="Fotografía secundaria cargada"></div>{% else %}<p class="muted small">Primero sube una foto secundaria para utilizar el círculo.</p>{% endif %}
+<label>Posición horizontal <output id="inset-x-val">{{item['photo_inset_x']|round|int}}</output></label>
+<input form="newsform" type="range" name="photo_inset_x" min="0" max="100" step="1" value="{{item['photo_inset_x']}}">
+<label>Posición vertical <output id="inset-y-val">{{item['photo_inset_y']|round|int}}</output></label>
+<input form="newsform" type="range" name="photo_inset_y" min="0" max="100" step="1" value="{{item['photo_inset_y']}}">
+<label>Zoom <output id="inset-z-val">{{'%.2f'|format(item['photo_inset_zoom'])}}×</output></label>
+<input form="newsform" type="range" name="photo_inset_zoom" min="1" max="3" step="0.05" value="{{item['photo_inset_zoom']}}">
+<div class="visual-actions"><button type="button" data-reset="inset" class="secondary">Centrar imagen circular</button></div>
+</div>
+<div class="visual-section"><strong>Vista previa antes de exportar</strong>
+<div class="preview-box"><img id="design-preview" class="preview-img" alt="Vista previa JPG del diseño con logotipo GO Arequipa" {% if not photo_ready %}hidden{% endif %}>
+<p id="preview-message" class="preview-info" role="status" aria-live="polite">{% if photo_ready %}Preparando vista previa...{% else %}Sube una foto principal para activar la vista previa.{% endif %}</p></div>
+<button type="button" id="refresh-preview" class="secondary">Actualizar vista previa</button>
+<p class="muted small">La vista previa tiene una marca de control que no aparece en la exportación final.</p></div></section>
 <section class="panel"><h2>Exportación</h2><p class="muted">Edita, guarda y aprueba antes de generar la gráfica.</p><a class="actionlink" href="{{url_for('download_copy',news_id=item['id'])}}">Descargar textos (.txt)</a><a class="actionlink" href="{{canva_link}}" target="_blank" rel="noopener noreferrer">Abrir plantilla de Canva</a>{% if photo_ready and item['photo_rights_confirmed'] and item['status'] in ['aprobada','publicada'] %}<a class="actionlink" href="{{url_for('download_design',news_id=item['id'])}}">Generar diseño original JPG (1080 × 1350)</a>{% else %}<p class="muted"><strong>Para habilitar el JPG:</strong> 1) sube una foto principal; 2) confirma su licencia; 3) selecciona estado «Aprobada»; 4) guarda los cambios.</p><a class="actionlink" href="{{url_for('download_design',news_id=item['id'])}}">Comprobar requisitos para generar JPG</a>{% endif %}</section>
 <section class="panel"><h2>Información recibida</h2><div class="eyebrow">TITULAR DE FUENTE</div><p>{{item['original_title']}}</p><div class="eyebrow">EXTRACTO</div><p class="muted">{{item['excerpt']}}</p><div class="eyebrow">TEXTO ACCESIBLE PARA CONTRASTE</div><p class="muted small">{{item['story_text'][:1400] or 'No se extrajo el texto. Abre la fuente original.'}}</p></section></div></div>
 <script>
@@ -67,7 +92,7 @@
     clearTimeout(timer);
     timer = setTimeout(() => { saveNow(); }, 900);
   }
-  form.querySelectorAll('input:not([type="hidden"]), textarea, select').forEach(el => {
+  [...form.querySelectorAll('input:not([type="hidden"]), textarea, select'), ...document.querySelectorAll('[form="newsform"]')].forEach(el => {
     el.addEventListener('input', changed);
     el.addEventListener('change', changed);
   });
@@ -134,6 +159,74 @@
   window.addEventListener('beforeunload', event => {
     if (lastSaved < revision) { event.preventDefault(); event.returnValue = ''; }
   });
+})();
+</script>
+<script>
+// Editor visual V6: actualiza preview sin guardar ni publicar; los seis sliders
+// pertenecen al formulario principal y entran en el guardado automático.
+(function(){
+ const form=document.getElementById('newsform');
+ const preview=document.getElementById('design-preview');
+ const message=document.getElementById('preview-message');
+ const refresh=document.getElementById('refresh-preview');
+ if(!form || !preview || !message || !refresh)return;
+ const endpoint="{{url_for('vista_previa',news_id=item['id'])}}";
+ const hasPhoto={{'true' if photo_ready else 'false'}};
+ let timer=null, oldUrl=null, seq=0;
+ const sliders={
+   photo_main_x:'main-x-val',photo_main_y:'main-y-val',photo_main_zoom:'main-z-val',
+   photo_inset_x:'inset-x-val',photo_inset_y:'inset-y-val',photo_inset_zoom:'inset-z-val'};
+ function updateLabels(){
+   Object.entries(sliders).forEach(([name,id])=>{
+     const field=document.querySelector('[name="'+name+'"]');
+     const out=document.getElementById(id);
+     if(field&&out)out.textContent=Number(field.value).toFixed(name.endsWith('zoom')?2:0)+(name.endsWith('zoom')?'×':'');
+   });
+   const circular=document.getElementById('inset-controls');
+   if(circular)circular.style.display=form.elements['model'].value==='modelo_2'?'grid':'none';
+ }
+ async function renderPreview(){
+   if(!hasPhoto){message.textContent='Sube una fotografía principal para obtener una vista previa.';return;}
+   const current=++seq;
+   message.textContent='Actualizando diseño...';
+   try{
+     const response=await fetch(endpoint,{method:'POST',credentials:'same-origin',body:new FormData(form)});
+     if(!response.ok){
+       let reason='No se pudo crear la vista previa';
+       try{const details=await response.json();reason=details.error||reason;}catch(_){}
+       throw new Error(reason);
+     }
+     const blob=await response.blob();
+     if(current!==seq)return;
+     const next=URL.createObjectURL(blob);
+     const previous=oldUrl;
+     oldUrl=next;
+     preview.src=next;
+     preview.hidden=false;
+     preview.onload=()=>{if(previous)URL.revokeObjectURL(previous);};
+     message.textContent='Vista previa actualizada. Revisa el encuadre y guarda antes de exportar.';
+   }catch(error){
+     if(current===seq)message.textContent=error.message;
+   }
+ }
+ function schedule(){updateLabels();clearTimeout(timer);timer=setTimeout(renderPreview,550);}
+ document.querySelectorAll('[form="newsform"]').forEach(s=>s.addEventListener('input',schedule));
+ ['titulo','bajada','cintillo','model'].forEach(name=>{
+   const el=form.elements[name];if(el){el.addEventListener('input',schedule);el.addEventListener('change',schedule);}
+ });
+ document.querySelectorAll('button[data-reset]').forEach(button=>button.addEventListener('click',()=>{
+   const isMain=button.dataset.reset==='main';
+   const prefix=isMain?'photo_main_':'photo_inset_';
+   const defaults=isMain?{x:50,y:36,zoom:1}:{x:50,y:32,zoom:1};
+   Object.entries(defaults).forEach(([field,value])=>{
+     const input=document.querySelector('[name="'+prefix+field+'"]');
+     if(input){input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));}
+   });
+ }));
+ refresh.addEventListener('click',renderPreview);
+ updateLabels();
+ if(hasPhoto)renderPreview();
+ window.addEventListener('beforeunload',()=>{if(oldUrl)URL.revokeObjectURL(oldUrl);});
 })();
 </script>
 {% endblock %}

@@ -47,7 +47,7 @@ class ExportacionJpgIntegracion(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertIn('sube primero una fotografía principal'.encode(), resp.data)
         self.assertNotIn(b'[Errno 2]', resp.data)
-        self.assertIn(b'5.0 - Gemini integrado', resp.data)
+        self.assertIn(b'6.0 - Editor visual + logo oficial', resp.data)
 
     def test_foto_subida_y_exportacion_completa(self):
         buf = io.BytesIO()

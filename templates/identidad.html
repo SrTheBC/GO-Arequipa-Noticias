@@ -1,0 +1,10 @@
+{% extends 'base.html' %}{% block title %}Identidad visual | GO Arequipa{% endblock %}
+{% block body %}<section class="panel" style="max-width:740px;margin:30px auto">
+<div class="eyebrow">IDENTIDAD VISUAL</div><h1>Logotipo oficial</h1>
+<p>Este logotipo se utiliza en todas las exportaciones JPG. Puedes reemplazarlo por un PNG transparente. Se guarda solo en tu PC, no en GitHub.</p>
+<div style="max-width:240px;margin:18px auto"><img src="{{url_for('view_brand_logo')}}" style="width:100%;height:auto" alt="Logo guardado de GO Arequipa Noticias"></div>
+<form method="post" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{csrf_token}}">
+<label>Reemplazar logo (PNG recomendado)</label><input name="logo" type="file" accept="image/png,image/jpeg,image/webp" required>
+<button type="submit">Guardar logotipo</button></form>
+<p class="muted small">La fotografía original que compartiste se incluye como logotipo predeterminado, recortado con el exterior transparente. El diseño en Canva no se modifica: esta configuración pertenece al exportador local.</p>
+</section>{% endblock %}
